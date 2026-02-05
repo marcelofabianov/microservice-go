@@ -1,0 +1,12 @@
+{
+  "cSpell.words": [
+    "pgconn"
+  ],
+  "go.useLanguageServer": true,
+  "gopls": {
+    "formatting.gofumpt": true,
+    "buildFlags": [
+      "-tags=unit,e2e,integration"
+    ]
+  }
+}

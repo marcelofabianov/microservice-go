@@ -1,0 +1,82 @@
+# Git and IDE
+.git
+.gitignore
+.gitattributes
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Documentation
+*.md
+README.md
+LICENSE
+CHANGELOG.md
+_docs/
+docs/
+
+# Environment and configuration
+.env*
+!.env.example
+*.local
+
+# Build artifacts and binaries
+/bin/
+/build/
+/tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+__debug*
+
+# Testing
+coverage.*
+*.test
+*.out
+
+# Database files
+*.db
+*.sqlite
+/db/
+
+# Certificates and secrets
+/certs/
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+
+# Docker files (já dentro do contexto)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Logs and cache
+*.log
+*.cache
+*.tmp
+
+# IDE and editor
+.vscode/
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+
+# Dependencies (serão baixadas no build)
+/vendor/
+
+# Air
+.air.toml
+.air_dlv.toml

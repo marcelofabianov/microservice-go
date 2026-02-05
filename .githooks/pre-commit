@@ -1,0 +1,73 @@
+#!/bin/bash
+#
+# Pre-commit hook para garantir qualidade do código
+# Executa formatação, linting e testes rápidos
+#
+
+set -e
+
+# Cores para output
+COLOR_RESET='\033[0m'
+COLOR_BOLD='\033[1m'
+COLOR_GREEN='\033[32m'
+COLOR_YELLOW='\033[33m'
+COLOR_RED='\033[31m'
+COLOR_BLUE='\033[34m'
+
+echo -e "${COLOR_BOLD}${COLOR_BLUE}🔍 Pre-commit: Verificando qualidade do código...${COLOR_RESET}\n"
+
+# Verifica se há arquivos Go staged
+STAGED_GO_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$' || true)
+
+if [ -z "$STAGED_GO_FILES" ]; then
+    echo -e "${COLOR_YELLOW}⚠ Nenhum arquivo Go modificado, pulando verificações${COLOR_RESET}"
+    exit 0
+fi
+
+echo -e "${COLOR_BLUE}📝 Arquivos Go modificados:${COLOR_RESET}"
+echo "$STAGED_GO_FILES"
+echo ""
+
+# 1. Formatação automática
+echo -e "${COLOR_BLUE}1️⃣  Formatando código...${COLOR_RESET}"
+if ! docker compose exec -T api gofumpt -l -w .; then
+    echo -e "${COLOR_RED}✗ Erro ao formatar código${COLOR_RESET}"
+    exit 1
+fi
+echo -e "${COLOR_GREEN}✓ Código formatado${COLOR_RESET}\n"
+
+# 2. Imports organizados
+echo -e "${COLOR_BLUE}2️⃣  Organizando imports...${COLOR_RESET}"
+if ! docker compose exec -T api goimports -w .; then
+    echo -e "${COLOR_RED}✗ Erro ao organizar imports${COLOR_RESET}"
+    exit 1
+fi
+echo -e "${COLOR_GREEN}✓ Imports organizados${COLOR_RESET}\n"
+
+# 3. Linting apenas em código novo
+echo -e "${COLOR_BLUE}3️⃣  Executando linter em código novo...${COLOR_RESET}"
+if ! docker compose exec -T api golangci-lint run ./... --new --timeout=3m; then
+    echo -e "${COLOR_RED}✗ Linting falhou! Corrija os problemas antes de commitar.${COLOR_RESET}"
+    echo -e "${COLOR_YELLOW}💡 Dica: Execute 'make lint-fix' para correções automáticas${COLOR_RESET}"
+    exit 1
+fi
+echo -e "${COLOR_GREEN}✓ Linting aprovado${COLOR_RESET}\n"
+
+# 4. Testes rápidos (apenas pacotes modificados)
+echo -e "${COLOR_BLUE}4️⃣  Executando testes rápidos...${COLOR_RESET}"
+if ! docker compose exec -T api go test -short ./... > /dev/null 2>&1; then
+    echo -e "${COLOR_RED}✗ Testes falharam! Corrija antes de commitar.${COLOR_RESET}"
+    echo -e "${COLOR_YELLOW}💡 Dica: Execute 'make test' para detalhes${COLOR_RESET}"
+    exit 1
+fi
+echo -e "${COLOR_GREEN}✓ Testes aprovados${COLOR_RESET}\n"
+
+# 5. Re-adicionar arquivos formatados ao stage
+echo -e "${COLOR_BLUE}5️⃣  Atualizando stage com arquivos formatados...${COLOR_RESET}"
+for file in $STAGED_GO_FILES; do
+    git add "$file"
+done
+echo -e "${COLOR_GREEN}✓ Stage atualizado${COLOR_RESET}\n"
+
+echo -e "${COLOR_BOLD}${COLOR_GREEN}✅ Pre-commit: Todas as verificações passaram!${COLOR_RESET}\n"
+exit 0

@@ -1,0 +1,79 @@
+# IDE configuration files
+.idea/
+
+# Binaries for programs and scripts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.sh
+*.bat
+*.cmd
+
+# Temporary files
+.DS_Store
+*.swp
+*.swop
+*.swo
+
+# Log Caches Debug
+*.log
+*.cache
+*.tmp
+*.swp
+*.swo
+*.swop
+*.tmp
+*.cfg
+/tmp/
+__debug*
+coverage.*
+security-report.json
+
+# Database files
+*.db
+*.sqlite
+
+# Certificate files
+*.cer
+*.crt
+*.pem
+*.p12
+*.pfx
+*.pass
+
+# TLS Certificates directory
+/certs
+
+# Test binary, built with `go test -c`
+/bin/
+/build/
+*.test
+*.out
+/api
+
+# Environment variables file
+.env*
+*.env*
+!.env.example
+
+# Generated files
+/docs/
+
+# AI Agents
+.agents
+.claude
+.github/skills
+
+# File Development
+/Dockerfile
+/docker-compose.yml
+/.dockerignore
+/.air.toml
+/.air_dlv.toml
+/.env*
+
+# Scripts
+!_env/dev/install-tools.sh
+!.githooks/setup.sh

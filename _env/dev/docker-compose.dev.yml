@@ -1,0 +1,295 @@
+# =============================================================================
+# NETWORKS - Isolamento de serviços
+# =============================================================================
+networks:
+  frontend:
+    driver: bridge
+    name: course_frontend
+  backend:
+    driver: bridge
+    internal: true
+    name: course_backend
+
+# =============================================================================
+# VOLUMES - Persistência de dados
+# =============================================================================
+volumes:
+  postgres_data:
+    name: course_postgres_data
+    driver: local
+  redis_data:
+    name: course_redis_data
+    driver: local
+  go_modules_cache:
+    name: course_go_modules
+    driver: local
+  api_tmp:
+    name: course_api_tmp
+    driver: local
+  api_bin:
+    name: course_api_bin
+    driver: local
+
+# =============================================================================
+# SERVICES - Definição dos containers
+# =============================================================================
+services:
+  # ---------------------------------------------------------------------------
+  # API - Aplicação Go principal
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+      args:
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+    container_name: course-api
+    hostname: course-api
+    restart: unless-stopped
+    environment:
+      # General
+      APP_GENERAL_ENV: ${APP_GENERAL_ENV:-development}
+      APP_GENERAL_TZ: ${APP_GENERAL_TZ:-America/Sao_Paulo}
+      APP_GENERAL_SERVICE_NAME: ${APP_GENERAL_SERVICE_NAME:-course-api}
+      # Logger
+      APP_LOGGER_LEVEL: ${APP_LOGGER_LEVEL:-debug}
+      # Server
+      APP_SERVER_API_HOST: ${APP_SERVER_API_HOST:-0.0.0.0}
+      APP_SERVER_API_PORT: ${APP_SERVER_API_PORT:-8080}
+      APP_SERVER_API_RATE_LIMIT: ${APP_SERVER_API_RATE_LIMIT:-100}
+      APP_SERVER_API_READ_TIMEOUT: ${APP_SERVER_API_READ_TIMEOUT:-5s}
+      APP_SERVER_API_WRITE_TIMEOUT: ${APP_SERVER_API_WRITE_TIMEOUT:-10s}
+      APP_SERVER_API_IDLE_TIMEOUT: ${APP_SERVER_API_IDLE_TIMEOUT:-120s}
+      APP_SERVER_API_MAXBODYSIZE: ${APP_SERVER_API_MAXBODYSIZE:-1048576}
+      # CORS
+      APP_SERVER_CORS_ALLOWEDORIGINS: ${APP_SERVER_CORS_ALLOWEDORIGINS:-https://jupiter.local:5173}
+      APP_SERVER_CORS_ALLOWEDMETHODS: ${APP_SERVER_CORS_ALLOWEDMETHODS:-GET,POST,PUT,DELETE,PATCH}
+      APP_SERVER_CORS_ALLOWEDHEADERS: ${APP_SERVER_CORS_ALLOWEDHEADERS:-Accept,Authorization,Content-Type,X-CSRF-Token}
+      APP_SERVER_CORS_EXPOSEDHEADERS: ${APP_SERVER_CORS_EXPOSEDHEADERS:-Link}
+      APP_SERVER_CORS_ALLOWCREDENTIALS: ${APP_SERVER_CORS_ALLOWCREDENTIALS:-true}
+      # TLS
+      APP_SERVER_API_TLS_ENABLED: ${APP_SERVER_API_TLS_ENABLED:-true}
+      APP_SERVER_API_TLS_CERT_FILE: ${APP_SERVER_API_TLS_CERT_FILE:-./.certs/course-cert.pem}
+      APP_SERVER_API_TLS_KEY_FILE: ${APP_SERVER_API_TLS_KEY_FILE:-./.certs/course-key.pem}
+      # Database Connect
+      APP_DB_CONNECT_QUERY_TIMEOUT: ${APP_DB_CONNECT_QUERY_TIMEOUT:-5s}
+      APP_DB_CONNECT_EXEC_TIMEOUT: ${APP_DB_CONNECT_EXEC_TIMEOUT:-5s}
+      APP_DB_CONNECT_BACKOFF_MIN: ${APP_DB_CONNECT_BACKOFF_MIN:-200ms}
+      APP_DB_CONNECT_BACKOFF_MAX: ${APP_DB_CONNECT_BACKOFF_MAX:-15s}
+      APP_DB_CONNECT_BACKOFF_FACTOR: ${APP_DB_CONNECT_BACKOFF_FACTOR:-2}
+      APP_DB_CONNECT_BACKOFF_JITTER: ${APP_DB_CONNECT_BACKOFF_JITTER:-true}
+      APP_DB_CONNECT_BACKOFF_RETRIES: ${APP_DB_CONNECT_BACKOFF_RETRIES:-7}
+      # Database Pool
+      APP_DB_POOL_MAX_OPEN_CONNS: ${APP_DB_POOL_MAX_OPEN_CONNS:-20}
+      APP_DB_POOL_MAX_IDLE_CONNS: ${APP_DB_POOL_MAX_IDLE_CONNS:-10}
+      APP_DB_POOL_CONN_MAX_LIFETIME: ${APP_DB_POOL_CONN_MAX_LIFETIME:-15m}
+      APP_DB_POOL_CONN_MAX_IDLE_TIME: ${APP_DB_POOL_CONN_MAX_IDLE_TIME:-5m}
+      APP_DB_POOL_HEALTH_CHECK_PERIOD: ${APP_DB_POOL_HEALTH_CHECK_PERIOD:-1m}
+      # Database Credentials
+      APP_DB_HOST: ${APP_DB_HOST:-course-postgres}
+      APP_DB_PORT: ${APP_DB_PORT:-5432}
+      APP_DB_NAME: ${APP_DB_NAME:-course}
+      APP_DB_USER: ${APP_DB_USER:-course}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-course123}
+      APP_DB_SSL_MODE: ${APP_DB_SSL_MODE:-disable}
+      # Redis Connect
+      APP_REDIS_HOST: ${APP_REDIS_HOST:-course-redis}
+      APP_REDIS_PORT: ${APP_REDIS_PORT:-6379}
+      APP_REDIS_PASSWORD: ${APP_REDIS_PASSWORD:-redis123}
+      APP_REDIS_DB: ${APP_REDIS_DB:-0}
+      APP_REDIS_CONNECT_QUERY_TIMEOUT: ${APP_REDIS_CONNECT_QUERY_TIMEOUT:-2s}
+      APP_REDIS_CONNECT_EXEC_TIMEOUT: ${APP_REDIS_CONNECT_EXEC_TIMEOUT:-2s}
+      APP_REDIS_CONNECT_BACKOFF_MIN: ${APP_REDIS_CONNECT_BACKOFF_MIN:-200ms}
+      APP_REDIS_CONNECT_BACKOFF_MAX: ${APP_REDIS_CONNECT_BACKOFF_MAX:-15s}
+      APP_REDIS_CONNECT_BACKOFF_FACTOR: ${APP_REDIS_CONNECT_BACKOFF_FACTOR:-2}
+      APP_REDIS_CONNECT_BACKOFF_JITTER: ${APP_REDIS_CONNECT_BACKOFF_JITTER:-true}
+      APP_REDIS_CONNECT_BACKOFF_RETRIES: ${APP_REDIS_CONNECT_BACKOFF_RETRIES:-7}
+      # Redis Pool
+      APP_REDIS_POOL_MAX_IDLE_CONNS: ${APP_REDIS_POOL_MAX_IDLE_CONNS:-10}
+      APP_REDIS_POOL_MAX_ACTIVE_CONNS: ${APP_REDIS_POOL_MAX_ACTIVE_CONNS:-20}
+      # Migrations
+      GOOSE_DRIVER: ${GOOSE_DRIVER:-postgres}
+      GOOSE_MIGRATION_DIR: ${GOOSE_MIGRATION_DIR:-/app/db/migrations}
+      GOOSE_FIXTURES_DIR: ${GOOSE_FIXTURES_DIR:-/app/db/fixtures}
+      GOOSE_SEEDS_DIR: ${GOOSE_SEEDS_DIR:-/app/db/seeds}
+      GOOSE_DBSTRING: "postgres://${APP_DB_USER:-course}:${APP_DB_PASSWORD:-course123}@${APP_DB_HOST:-course-postgres}:${APP_DB_PORT:-5432}/${APP_DB_NAME:-course}?sslmode=${APP_DB_SSL_MODE:-disable}"
+    ports:
+      - "${HOST_API_PORT:-8080}:${APP_SERVER_API_PORT:-8080}" # API HTTP/HTTPS
+      - "40000:40000" # Delve debugger
+    volumes:
+      # Code hot reload
+      - .:/app:cached
+      # Evitar sobrescrever módulos Go e arquivos temporários
+      - go_modules_cache:/go/pkg/mod
+      - api_tmp:/app/tmp
+      - api_bin:/app/bin
+      # Certificados TLS
+      - ./certs:/app/certs:ro
+      # Configurações Air
+      - ./.air.toml:/app/.air.toml:ro
+      - ./.air_dlv.toml:/app/.air_dlv.toml:ro
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fk", "https://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    labels:
+      - "com.course.service=api"
+      - "com.course.environment=development"
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL - Banco de dados principal
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: course-postgres
+    hostname: course-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-course}
+      POSTGRES_USER: ${POSTGRES_USER:-course}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-course123}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${HOST_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - backend
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-course} -d ${POSTGRES_DB:-course}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "com.course.service=postgres"
+      - "com.course.environment=development"
+
+  # ---------------------------------------------------------------------------
+  # Redis - Cache e sessões
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: course-redis
+    hostname: course-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-redis123}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "${HOST_REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "com.course.service=redis"
+      - "com.course.environment=development"
+
+  # ---------------------------------------------------------------------------
+  # Adminer - Interface web para PostgreSQL (opcional)
+  # ---------------------------------------------------------------------------
+  adminer:
+    image: adminer:latest
+    container_name: course-adminer
+    hostname: course-adminer
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: dracula
+    ports:
+      - "${HOST_ADMINER_PORT:-8081}:8080"
+    networks:
+      - backend
+      - frontend
+    depends_on:
+      - postgres
+    labels:
+      - "com.course.service=adminer"
+      - "com.course.environment=development"
+    profiles:
+      - tools
+
+  # ---------------------------------------------------------------------------
+  # Redis Commander - Interface web para Redis (opcional)
+  # ---------------------------------------------------------------------------
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: course-redis-commander
+    hostname: course-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: "local:redis:6379:0:${REDIS_PASSWORD:-redis123}"
+    ports:
+      - "${HOST_REDIS_COMMANDER_PORT:-8082}:8081"
+    networks:
+      - backend
+      - frontend
+    depends_on:
+      - redis
+    labels:
+      - "com.course.service=redis-commander"
+      - "com.course.environment=development"
+    profiles:
+      - tools

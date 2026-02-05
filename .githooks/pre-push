@@ -1,0 +1,86 @@
+#!/bin/bash
+#
+# Pre-push hook para garantir qualidade completa antes do push
+# Executa análise completa de qualidade e segurança
+#
+
+set -e
+
+# Cores para output
+COLOR_RESET='\033[0m'
+COLOR_BOLD='\033[1m'
+COLOR_GREEN='\033[32m'
+COLOR_YELLOW='\033[33m'
+COLOR_RED='\033[31m'
+COLOR_BLUE='\033[34m'
+
+echo -e "${COLOR_BOLD}${COLOR_BLUE}🚀 Pre-push: Verificação completa antes do push...${COLOR_RESET}\n"
+
+# Verifica se há containers rodando
+if ! docker compose ps | grep -q "Up"; then
+    echo -e "${COLOR_RED}✗ Containers não estão rodando!${COLOR_RESET}"
+    echo -e "${COLOR_YELLOW}💡 Execute 'make up' primeiro${COLOR_RESET}"
+    exit 1
+fi
+
+# 1. Linting completo
+echo -e "${COLOR_BLUE}1️⃣  Executando linter completo...${COLOR_RESET}"
+if ! docker compose exec -T api golangci-lint run ./... --timeout=5m; then
+    echo -e "${COLOR_RED}✗ Linting falhou!${COLOR_RESET}"
+    echo -e "${COLOR_YELLOW}💡 Dica: Execute 'make lint-verbose' para detalhes${COLOR_RESET}"
+    exit 1
+fi
+echo -e "${COLOR_GREEN}✓ Linting aprovado${COLOR_RESET}\n"
+
+# 2. Testes completos com cobertura
+echo -e "${COLOR_BLUE}2️⃣  Executando testes completos...${COLOR_RESET}"
+if ! docker compose exec -T api go test -v -coverprofile=coverage.out ./... > /dev/null 2>&1; then
+    echo -e "${COLOR_RED}✗ Testes falharam!${COLOR_RESET}"
+    echo -e "${COLOR_YELLOW}💡 Dica: Execute 'make test' para detalhes${COLOR_RESET}"
+    exit 1
+fi
+
+# Verificar cobertura mínima (opcional - 70%)
+COVERAGE=$(docker compose exec -T api go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+    echo -e "${COLOR_YELLOW}⚠ Cobertura de testes abaixo de 70%: ${COVERAGE}%${COLOR_RESET}"
+    echo -e "${COLOR_YELLOW}💡 Considere adicionar mais testes${COLOR_RESET}"
+else
+    echo -e "${COLOR_GREEN}✓ Testes aprovados (cobertura: ${COVERAGE}%)${COLOR_RESET}"
+fi
+echo ""
+
+# 3. Análise de segurança
+echo -e "${COLOR_BLUE}3️⃣  Executando análise de segurança...${COLOR_RESET}"
+if ! docker compose exec -T api gosec -quiet ./... > /dev/null 2>&1; then
+    echo -e "${COLOR_YELLOW}⚠ Possíveis problemas de segurança detectados${COLOR_RESET}"
+    echo -e "${COLOR_YELLOW}💡 Execute 'make security-check' para detalhes${COLOR_RESET}"
+    # Não bloqueia push, apenas avisa
+else
+    echo -e "${COLOR_GREEN}✓ Análise de segurança aprovada${COLOR_RESET}"
+fi
+echo ""
+
+# 4. Verificar vulnerabilidades conhecidas
+echo -e "${COLOR_BLUE}4️⃣  Verificando vulnerabilidades conhecidas...${COLOR_RESET}"
+if docker compose exec -T api govulncheck ./... > /dev/null 2>&1; then
+    echo -e "${COLOR_GREEN}✓ Nenhuma vulnerabilidade conhecida detectada${COLOR_RESET}"
+else
+    echo -e "${COLOR_YELLOW}⚠ Vulnerabilidades detectadas${COLOR_RESET}"
+    echo -e "${COLOR_YELLOW}💡 Execute 'make security-check' para detalhes${COLOR_RESET}"
+    # Não bloqueia push, apenas avisa
+fi
+echo ""
+
+# 5. Verificar mod tidy
+echo -e "${COLOR_BLUE}5️⃣  Verificando go.mod e go.sum...${COLOR_RESET}"
+docker compose exec -T api go mod tidy
+if ! git diff --exit-code go.mod go.sum > /dev/null 2>&1; then
+    echo -e "${COLOR_RED}✗ go.mod ou go.sum não estão atualizados!${COLOR_RESET}"
+    echo -e "${COLOR_YELLOW}💡 Execute 'make mod-tidy' e commit as alterações${COLOR_RESET}"
+    exit 1
+fi
+echo -e "${COLOR_GREEN}✓ go.mod e go.sum atualizados${COLOR_RESET}\n"
+
+echo -e "${COLOR_BOLD}${COLOR_GREEN}✅ Pre-push: Todas as verificações passaram! Push permitido.${COLOR_RESET}\n"
+exit 0

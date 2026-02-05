@@ -1,0 +1,65 @@
+#!/bin/bash
+#
+# Commit-msg hook para validar mensagens de commit
+# Garante uso de Conventional Commits
+#
+
+set -e
+
+# Cores para output
+COLOR_RESET='\033[0m'
+COLOR_BOLD='\033[1m'
+COLOR_GREEN='\033[32m'
+COLOR_YELLOW='\033[33m'
+COLOR_RED='\033[31m'
+COLOR_BLUE='\033[34m'
+
+COMMIT_MSG_FILE=$1
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+# Ignora mensagens de merge, revert, etc
+if [[ "$COMMIT_MSG" =~ ^(Merge|Revert|Initial commit) ]]; then
+    exit 0
+fi
+
+echo -e "${COLOR_BLUE}📝 Validando mensagem do commit...${COLOR_RESET}"
+
+# Padrão Conventional Commits
+# Formato: <type>(<scope>): <subject>
+# Tipos permitidos: feat, fix, docs, style, refactor, perf, test, build, ci, chore
+PATTERN="^(feat|fix|docs|style|refactor|perf|test|build|ci|chore)(\(.+\))?: .{1,72}"
+
+if ! [[ "$COMMIT_MSG" =~ $PATTERN ]]; then
+    echo -e "${COLOR_RED}✗ Mensagem de commit inválida!${COLOR_RESET}\n"
+    echo -e "${COLOR_YELLOW}A mensagem deve seguir o padrão Conventional Commits:${COLOR_RESET}"
+    echo -e "${COLOR_BOLD}<type>(<scope>): <subject>${COLOR_RESET}\n"
+    echo -e "${COLOR_BLUE}Tipos permitidos:${COLOR_RESET}"
+    echo -e "  ${COLOR_GREEN}feat${COLOR_RESET}      - Nova funcionalidade"
+    echo -e "  ${COLOR_GREEN}fix${COLOR_RESET}       - Correção de bug"
+    echo -e "  ${COLOR_GREEN}docs${COLOR_RESET}      - Documentação"
+    echo -e "  ${COLOR_GREEN}style${COLOR_RESET}     - Formatação, ponto e vírgula, etc (sem mudança de código)"
+    echo -e "  ${COLOR_GREEN}refactor${COLOR_RESET}  - Refatoração de código"
+    echo -e "  ${COLOR_GREEN}perf${COLOR_RESET}      - Melhorias de performance"
+    echo -e "  ${COLOR_GREEN}test${COLOR_RESET}      - Adição ou correção de testes"
+    echo -e "  ${COLOR_GREEN}build${COLOR_RESET}     - Mudanças no build ou dependências"
+    echo -e "  ${COLOR_GREEN}ci${COLOR_RESET}        - Mudanças em CI/CD"
+    echo -e "  ${COLOR_GREEN}chore${COLOR_RESET}     - Outras mudanças que não modificam src ou testes\n"
+    echo -e "${COLOR_BLUE}Exemplos válidos:${COLOR_RESET}"
+    echo -e "  ${COLOR_GREEN}feat(user): add user registration${COLOR_RESET}"
+    echo -e "  ${COLOR_GREEN}fix(auth): correct token validation${COLOR_RESET}"
+    echo -e "  ${COLOR_GREEN}docs: update README with new setup${COLOR_RESET}"
+    echo -e "  ${COLOR_GREEN}refactor(storage): simplify query logic${COLOR_RESET}\n"
+    echo -e "${COLOR_YELLOW}Sua mensagem:${COLOR_RESET}"
+    echo -e "  ${COLOR_RED}${COMMIT_MSG}${COLOR_RESET}\n"
+    exit 1
+fi
+
+# Verifica tamanho da primeira linha (máximo 72 caracteres)
+FIRST_LINE=$(echo "$COMMIT_MSG" | head -n 1)
+if [ ${#FIRST_LINE} -gt 72 ]; then
+    echo -e "${COLOR_YELLOW}⚠ Mensagem muito longa (${#FIRST_LINE} caracteres, máximo 72)${COLOR_RESET}"
+    echo -e "${COLOR_YELLOW}💡 Considere encurtar o subject${COLOR_RESET}\n"
+fi
+
+echo -e "${COLOR_GREEN}✓ Mensagem de commit válida${COLOR_RESET}\n"
+exit 0
