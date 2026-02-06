@@ -97,22 +97,20 @@ func NewErrUserFailedGenerateUuid(err error) error {
 	)
 }
 
-func NewErrUserEmailAlreadyExists(email string) error {
+func NewErrUserEmailAlreadyExists() error {
 	return fault.Wrap(
 		ErrUserEmailAlreadyExists,
 		ErrUserEmailAlreadyExists.Error(),
 		fault.WithCode(fault.Conflict),
-		fault.WithContext("email", email),
 		fault.WithContext("aggregate", USER_AGGREGATE),
 	)
 }
 
-func NewErrUserPhoneAlreadyExists(phone string) error {
+func NewErrUserPhoneAlreadyExists() error {
 	return fault.Wrap(
 		ErrUserPhoneAlreadyExists,
 		ErrUserPhoneAlreadyExists.Error(),
 		fault.WithCode(fault.Conflict),
-		fault.WithContext("phone", phone),
 		fault.WithContext("aggregate", USER_AGGREGATE),
 	)
 }
@@ -126,12 +124,11 @@ func NewErrUserFailedHashPassword() error {
 	)
 }
 
-func NewErrUserFailedCreateUser(err error) error {
+func NewErrUserFailedCreateUser() error {
 	return fault.Wrap(
 		ErrUserFailedCreateUser,
 		ErrUserFailedCreateUser.Error(),
 		fault.WithCode(fault.Internal),
-		fault.WithContext("error", err.Error()),
 		fault.WithContext("aggregate", USER_AGGREGATE),
 	)
 }
