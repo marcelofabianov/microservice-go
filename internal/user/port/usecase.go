@@ -11,7 +11,7 @@ type RegisterUserInput struct {
 	Email    string `json:"email" validate:"required,email,max=254"`
 	Password string `json:"password" validate:"required,min=8,max=72"`
 	Phone    string `json:"phone" validate:"required"`
-	Role     string `json:"role" validate:"required,oneof=admin common guest"`
+	Role     string `json:"role" validate:"required"`
 }
 
 type RegisterUserResponse struct {
