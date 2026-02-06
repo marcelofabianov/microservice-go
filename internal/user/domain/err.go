@@ -19,6 +19,10 @@ var (
 
 	// --- Infrastructure ---
 	ErrUserFailedGenerateUuid = errors.New("failed to generate user ID")
+	ErrUserEmailAlreadyExists = errors.New("email already exists")
+	ErrUserPhoneAlreadyExists = errors.New("phone already exists")
+	ErrUserFailedHashPassword = errors.New("failed to hash password")
+	ErrUserFailedCreateUser   = errors.New("failed to create user")
 )
 
 // --- Validation ---
@@ -87,6 +91,45 @@ func NewErrUserFailedGenerateUuid(err error) error {
 	return fault.Wrap(
 		ErrUserFailedGenerateUuid,
 		ErrUserFailedGenerateUuid.Error(),
+		fault.WithCode(fault.Internal),
+		fault.WithContext("error", err.Error()),
+		fault.WithContext("aggregate", USER_AGGREGATE),
+	)
+}
+
+func NewErrUserEmailAlreadyExists(email string) error {
+	return fault.Wrap(
+		ErrUserEmailAlreadyExists,
+		ErrUserEmailAlreadyExists.Error(),
+		fault.WithCode(fault.Conflict),
+		fault.WithContext("email", email),
+		fault.WithContext("aggregate", USER_AGGREGATE),
+	)
+}
+
+func NewErrUserPhoneAlreadyExists(phone string) error {
+	return fault.Wrap(
+		ErrUserPhoneAlreadyExists,
+		ErrUserPhoneAlreadyExists.Error(),
+		fault.WithCode(fault.Conflict),
+		fault.WithContext("phone", phone),
+		fault.WithContext("aggregate", USER_AGGREGATE),
+	)
+}
+
+func NewErrUserFailedHashPassword() error {
+	return fault.Wrap(
+		ErrUserFailedHashPassword,
+		ErrUserFailedHashPassword.Error(),
+		fault.WithCode(fault.Internal),
+		fault.WithContext("aggregate", USER_AGGREGATE),
+	)
+}
+
+func NewErrUserFailedCreateUser(err error) error {
+	return fault.Wrap(
+		ErrUserFailedCreateUser,
+		ErrUserFailedCreateUser.Error(),
 		fault.WithCode(fault.Internal),
 		fault.WithContext("error", err.Error()),
 		fault.WithContext("aggregate", USER_AGGREGATE),

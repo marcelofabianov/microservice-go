@@ -28,6 +28,7 @@ import (
 func main() {
 	fx.New(
 		di.PkgModule,
+		di.UserModule,
 		di.AppModule,
 		fx.Invoke(func(*web.Server) {}),
 	).Run()
