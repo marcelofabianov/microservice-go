@@ -131,7 +131,7 @@ func TestRegisterUserHandler_Handle(t *testing.T) {
 	})
 
 	t.Run("returns 409 for duplicate email", func(t *testing.T) {
-		uc := &mockUseCase{err: domain.NewErrUserEmailAlreadyExists("john@example.com")}
+		uc := &mockUseCase{err: domain.NewErrUserEmailAlreadyExists()}
 		handler := NewRegisterUserHandler(uc, newTestValidator(t))
 
 		req := httptest.NewRequest(http.MethodPost, "/users", bytes.NewReader(validRequestBody()))

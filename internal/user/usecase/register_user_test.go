@@ -87,7 +87,7 @@ func TestRegisterUserUseCase_Execute(t *testing.T) {
 	})
 
 	t.Run("returns error when repository fails with duplicate email", func(t *testing.T) {
-		repo := &mockRepository{err: domain.NewErrUserEmailAlreadyExists("john@example.com")}
+		repo := &mockRepository{err: domain.NewErrUserEmailAlreadyExists()}
 		hasher := &mockHasher{hash: "$argon2id$v=19$m=65536,t=3,p=4$c2FsdA$a2V5"}
 		uc := NewRegisterUserUseCase(repo, hasher)
 
@@ -109,5 +109,44 @@ func TestRegisterUserUseCase_Execute(t *testing.T) {
 
 		assert.Nil(t, output)
 		assert.True(t, errors.Is(err, domain.ErrUserInvalidName))
+	})
+
+	t.Run("returns error when domain rejects invalid phone", func(t *testing.T) {
+		repo := &mockRepository{}
+		hasher := &mockHasher{hash: "$argon2id$v=19$m=65536,t=3,p=4$c2FsdA$a2V5"}
+		uc := NewRegisterUserUseCase(repo, hasher)
+
+		input := validInput()
+		input.Phone = "invalid"
+
+		output, err := uc.Execute(context.Background(), input)
+
+		assert.Nil(t, output)
+		assert.True(t, errors.Is(err, domain.ErrUserInvalidPhone))
+	})
+
+	t.Run("returns error when domain rejects invalid role", func(t *testing.T) {
+		repo := &mockRepository{}
+		hasher := &mockHasher{hash: "$argon2id$v=19$m=65536,t=3,p=4$c2FsdA$a2V5"}
+		uc := NewRegisterUserUseCase(repo, hasher)
+
+		input := validInput()
+		input.Role = "superadmin"
+
+		output, err := uc.Execute(context.Background(), input)
+
+		assert.Nil(t, output)
+		assert.True(t, errors.Is(err, domain.ErrUserInvalidRole))
+	})
+
+	t.Run("returns error when hasher returns empty hash", func(t *testing.T) {
+		repo := &mockRepository{}
+		hasher := &mockHasher{hash: ""}
+		uc := NewRegisterUserUseCase(repo, hasher)
+
+		output, err := uc.Execute(context.Background(), validInput())
+
+		assert.Nil(t, output)
+		assert.True(t, errors.Is(err, domain.ErrUserFailedHashPassword))
 	})
 }
