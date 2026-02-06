@@ -19,7 +19,13 @@ Go REST API (module: `github.com/marcelofabianov/course`) with OAuth2 authentica
 
 ### Pilares de Desenvolvimento
 
-**Security-first, TDD, DDD** - nesta ordem de prioridade.
+**Security-first, TDD, DDD, Data Integrity, Pattern Consistency** - nesta ordem de prioridade.
+
+- **Security-first** - toda decisao considera seguranca como requisito primario
+- **TDD** - testes escritos ANTES da implementacao, cobertura minima de 80%
+- **DDD** - modelagem orientada ao dominio, bounded contexts isolados, linguagem ubiqua
+- **Data Integrity** - garantir integridade de dados em todas as camadas (constraints no banco, validacao no domain, optimistic locking, transacoes atomicas, idempotencia em event handlers)
+- **Pattern Consistency** - manter padroes ja estabelecidos no projeto. Antes de implementar, verificar como o codigo existente resolve problemas similares e seguir a mesma abordagem (estrutura de arquivos, naming, error handling, DI registration, port definitions, audit fields)
 
 ### Principios
 

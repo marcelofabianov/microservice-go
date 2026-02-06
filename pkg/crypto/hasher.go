@@ -151,8 +151,8 @@ func decodeHash(hash string) (*Argon2Params, []byte, []byte, error) {
 		Memory:      memory,
 		Iterations:  iterations,
 		Parallelism: parallelism,
-		SaltLength:  uint32(len(salt)),
-		KeyLength:   uint32(len(key)),
+		SaltLength:  uint32(len(salt)), // #nosec G115 - salt length is always small (16-32 bytes)
+		KeyLength:   uint32(len(key)),  // #nosec G115 - key length is always small (32-64 bytes)
 	}, salt, key, nil
 }
 
