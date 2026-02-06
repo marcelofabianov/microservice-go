@@ -1,4 +1,4 @@
-# golangci-lint v2 configuration for course project
+# golangci-lint v2 configuration for boilerplate project
 # Based on Go best practices and Uber Style Guide
 
 run:
@@ -47,7 +47,7 @@ linters:
   # v2: Linter settings now under linters section
   settings:
     goimports:
-      local-prefixes: github.com/marcelofabianov/course
+      local-prefixes: github.com/marcelofabianov/boilerplate
 
     # Depguard: Control which packages can be imported
     # Block only deprecated or problematic packages

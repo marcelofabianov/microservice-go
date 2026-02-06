@@ -55,7 +55,7 @@ help: ## Mostra esta mensagem de ajuda
 # =============================================================================
 clean-setup: ## Remove configurações antigas da raiz
 	@printf "$(COLOR_BLUE)→ Removendo configuração antiga da raiz...$(COLOR_RESET)\n"
-	@rm -f .dockerignore docker-compose.yml Dockerfile .air.toml .air_dlv.toml .golangci.yml
+	@rm -f .dockerignore docker-compose.yml Dockerfile .air.toml .air_dlv.toml
 	@rm -rf $(BIN_DIR) $(CERTS_DIR) $(DOCS_DIR) $(TMP_DIR)
 	@printf "$(COLOR_GREEN)✓ Configuração antiga removida!$(COLOR_RESET)\n"
 
@@ -68,7 +68,6 @@ setup-dev: clean-setup ## Configura ambiente de desenvolvimento completo
 	@cp -f _env/dev/Dockerfile Dockerfile
 	@cp -f _env/dev/.air.toml .air.toml
 	@cp -f _env/dev/.air_dlv.toml .air_dlv.toml
-	@cp -f _env/dev/.golangci.yml .golangci.yml
 	@printf "$(COLOR_YELLOW)2. Configurando UID/GID do usuário no .env...$(COLOR_RESET)\n"
 	@USER_UID=$$(id -u); \
 	USER_GID=$$(id -g); \
