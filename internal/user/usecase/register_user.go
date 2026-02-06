@@ -23,14 +23,11 @@ func NewRegisterUserUseCase(repo port.CreateUserRepositoryPort, hasher port.Pass
 
 func (uc *RegisterUserUseCase) Execute(ctx context.Context, input *port.RegisterUserInput) (*port.RegisterUserOutput, error) {
 	passwordHash, err := uc.hasher.Hash(input.Password)
-	if err != nil {
+	if err != nil || passwordHash == "" {
 		return nil, domain.NewErrUserFailedHashPassword()
 	}
 
-	hash, err := wisp.NewNonEmptyString(passwordHash)
-	if err != nil {
-		return nil, domain.NewErrUserFailedHashPassword()
-	}
+	hash, _ := wisp.NewNonEmptyString(passwordHash)
 
 	user, err := domain.NewUser(&domain.NewUserInput{
 		Name:  input.Name,
