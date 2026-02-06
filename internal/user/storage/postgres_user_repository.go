@@ -2,8 +2,11 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/marcelofabianov/course/internal/user/domain"
 	"github.com/marcelofabianov/course/pkg/database"
@@ -52,15 +55,15 @@ func (r *PostgresUserRepository) CreateUser(ctx context.Context, user *domain.Us
 		return nil
 	}
 
-	errMsg := err.Error()
-	if strings.Contains(errMsg, "23505") {
-		if strings.Contains(errMsg, "email") {
-			return domain.NewErrUserEmailAlreadyExists(user.Email.String())
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		if strings.Contains(pgErr.ConstraintName, "email") {
+			return domain.NewErrUserEmailAlreadyExists()
 		}
-		if strings.Contains(errMsg, "phone") {
-			return domain.NewErrUserPhoneAlreadyExists(user.Phone.String())
+		if strings.Contains(pgErr.ConstraintName, "phone") {
+			return domain.NewErrUserPhoneAlreadyExists()
 		}
 	}
 
-	return domain.NewErrUserFailedCreateUser(err)
+	return domain.NewErrUserFailedCreateUser()
 }
