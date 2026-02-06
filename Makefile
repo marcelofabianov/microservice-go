@@ -1,6 +1,9 @@
 .PHONY: help setup-dev clean-setup build up down restart logs clean reset-db test lint security-scan \
 	build-fast up-tools dev down-volumes restart-api logs-api logs-postgres logs-redis ps \
-	db-migrate-up db-migrate-down db-migrate-status db-shell shell shell-root test-coverage \
+	migrate-up migrate-down migrate-reset migrate-status migrate-create \
+	fixtures-up fixtures-down fixtures-reset fixtures-status fixtures-create \
+	seeds-up seeds-down seeds-reset seeds-status seeds-create \
+	db-shell shell shell-root test-coverage \
 	lint-fix lint-verbose lint-new fmt security-check mod-download mod-tidy mod-verify \
 	quality-check quality-full ci build-prod build-prod-debug size-check \
 	hooks-install hooks-uninstall hooks-list clean-all prune check-deps info swagger-init swagger-generate \
@@ -16,6 +19,11 @@ CERTS_DIR := certs
 BIN_DIR := bin
 TMP_DIR := tmp
 DOCS_DIR := docs
+
+# Container commands
+GOOSE_CMD := docker compose exec api goose
+FIXTURES_DIR := /app/db/fixtures
+SEEDS_DIR := /app/db/seeds
 
 # Binary build variables
 BINARY_NAME := $(PROJECT_NAME)
@@ -165,28 +173,98 @@ ps: ## Lista containers em execução
 	@docker compose ps
 
 # =============================================================================
-# DATABASE - Comandos relacionados ao banco de dados
+# MIGRATIONS - Gerenciamento de migrations com Goose
 # =============================================================================
-reset-db: ## Reseta o banco de dados (migrations + fixtures)
-	@printf "$(COLOR_BLUE)→ Resetando banco de dados...$(COLOR_RESET)\n"
-	@docker compose exec api goose -dir ./db/migrations postgres "postgresql://course:course123@postgres:5432/course?sslmode=disable" reset || true
-	@docker compose exec api goose -dir ./db/migrations postgres "postgresql://course:course123@postgres:5432/course?sslmode=disable" up
-	@printf "$(COLOR_YELLOW)→ Populando com fixtures de desenvolvimento...$(COLOR_RESET)\n"
-	@docker compose exec api goose -dir ./db/fixtures postgres "postgresql://course:course123@postgres:5432/course?sslmode=disable" up
-	@printf "$(COLOR_GREEN)✓ Banco de dados resetado com sucesso!$(COLOR_RESET)\n"
-
-db-migrate-up: ## Executa migrations pendentes
+migrate-up: ## Executa todas as migrations pendentes
 	@printf "$(COLOR_BLUE)→ Executando migrations...$(COLOR_RESET)\n"
-	@docker compose exec api goose -dir ./db/migrations postgres "postgresql://course:course123@postgres:5432/course?sslmode=disable" up
+	@$(GOOSE_CMD) up
 	@printf "$(COLOR_GREEN)✓ Migrations executadas!$(COLOR_RESET)\n"
 
-db-migrate-down: ## Reverte a última migration
-	@printf "$(COLOR_BLUE)→ Revertendo migration...$(COLOR_RESET)\n"
-	@docker compose exec api goose -dir ./db/migrations postgres "postgresql://course:course123@postgres:5432/course?sslmode=disable" down
+migrate-down: ## Reverte a última migration
+	@printf "$(COLOR_BLUE)→ Revertendo última migration...$(COLOR_RESET)\n"
+	@$(GOOSE_CMD) down
 	@printf "$(COLOR_GREEN)✓ Migration revertida!$(COLOR_RESET)\n"
 
-db-migrate-status: ## Mostra status das migrations
-	@docker compose exec api goose -dir ./db/migrations postgres "postgresql://course:course123@postgres:5432/course?sslmode=disable" status
+migrate-reset: ## Reverte todas as migrations
+	@printf "$(COLOR_BLUE)→ Revertendo todas as migrations...$(COLOR_RESET)\n"
+	@$(GOOSE_CMD) reset
+	@printf "$(COLOR_GREEN)✓ Migrations revertidas!$(COLOR_RESET)\n"
+
+migrate-status: ## Mostra status das migrations
+	@$(GOOSE_CMD) status
+
+migrate-create: ## Cria nova migration (uso: make migrate-create NAME=create_users)
+	$(if $(NAME),,$(error NAME is required. Usage: make migrate-create NAME=create_users))
+	@printf "$(COLOR_BLUE)→ Criando migration '$(NAME)'...$(COLOR_RESET)\n"
+	@$(GOOSE_CMD) create $(NAME) sql
+	@printf "$(COLOR_GREEN)✓ Migration criada!$(COLOR_RESET)\n"
+
+# =============================================================================
+# FIXTURES - Dados de desenvolvimento com Goose
+# =============================================================================
+fixtures-up: ## Executa todas as fixtures
+	@printf "$(COLOR_BLUE)→ Executando fixtures...$(COLOR_RESET)\n"
+	@$(GOOSE_CMD) -dir $(FIXTURES_DIR) up
+	@printf "$(COLOR_GREEN)✓ Fixtures executadas!$(COLOR_RESET)\n"
+
+fixtures-down: ## Reverte última fixture
+	@printf "$(COLOR_BLUE)→ Revertendo última fixture...$(COLOR_RESET)\n"
+	@$(GOOSE_CMD) -dir $(FIXTURES_DIR) down
+	@printf "$(COLOR_GREEN)✓ Fixture revertida!$(COLOR_RESET)\n"
+
+fixtures-reset: ## Reseta e reaplica todas as fixtures
+	@printf "$(COLOR_BLUE)→ Resetando fixtures...$(COLOR_RESET)\n"
+	@$(GOOSE_CMD) -dir $(FIXTURES_DIR) reset
+	@$(GOOSE_CMD) -dir $(FIXTURES_DIR) up
+	@printf "$(COLOR_GREEN)✓ Fixtures resetadas!$(COLOR_RESET)\n"
+
+fixtures-status: ## Mostra status das fixtures
+	@$(GOOSE_CMD) -dir $(FIXTURES_DIR) status
+
+fixtures-create: ## Cria nova fixture (uso: make fixtures-create NAME=add_admin)
+	$(if $(NAME),,$(error NAME is required. Usage: make fixtures-create NAME=add_admin))
+	@printf "$(COLOR_BLUE)→ Criando fixture '$(NAME)'...$(COLOR_RESET)\n"
+	@$(GOOSE_CMD) -dir $(FIXTURES_DIR) create $(NAME) sql
+	@printf "$(COLOR_GREEN)✓ Fixture criada!$(COLOR_RESET)\n"
+
+# =============================================================================
+# SEEDS - Dados de seed com Goose
+# =============================================================================
+seeds-up: ## Executa todos os seeds
+	@printf "$(COLOR_BLUE)→ Executando seeds...$(COLOR_RESET)\n"
+	@$(GOOSE_CMD) -dir $(SEEDS_DIR) up
+	@printf "$(COLOR_GREEN)✓ Seeds executados!$(COLOR_RESET)\n"
+
+seeds-down: ## Reverte último seed
+	@printf "$(COLOR_BLUE)→ Revertendo último seed...$(COLOR_RESET)\n"
+	@$(GOOSE_CMD) -dir $(SEEDS_DIR) down
+	@printf "$(COLOR_GREEN)✓ Seed revertido!$(COLOR_RESET)\n"
+
+seeds-reset: ## Reseta e reaplica todos os seeds
+	@printf "$(COLOR_BLUE)→ Resetando seeds...$(COLOR_RESET)\n"
+	@$(GOOSE_CMD) -dir $(SEEDS_DIR) reset
+	@$(GOOSE_CMD) -dir $(SEEDS_DIR) up
+	@printf "$(COLOR_GREEN)✓ Seeds resetados!$(COLOR_RESET)\n"
+
+seeds-status: ## Mostra status dos seeds
+	@$(GOOSE_CMD) -dir $(SEEDS_DIR) status
+
+seeds-create: ## Cria novo seed (uso: make seeds-create NAME=populate_categories)
+	$(if $(NAME),,$(error NAME is required. Usage: make seeds-create NAME=populate_categories))
+	@printf "$(COLOR_BLUE)→ Criando seed '$(NAME)'...$(COLOR_RESET)\n"
+	@$(GOOSE_CMD) -dir $(SEEDS_DIR) create $(NAME) sql
+	@printf "$(COLOR_GREEN)✓ Seed criado!$(COLOR_RESET)\n"
+
+# =============================================================================
+# DATABASE - Utilitários do banco de dados
+# =============================================================================
+reset-db: ## Reseta o banco completo (migrations + fixtures)
+	@printf "$(COLOR_BLUE)→ Resetando banco de dados...$(COLOR_RESET)\n"
+	@$(GOOSE_CMD) reset || true
+	@$(GOOSE_CMD) up
+	@printf "$(COLOR_YELLOW)→ Aplicando fixtures...$(COLOR_RESET)\n"
+	@$(GOOSE_CMD) -dir $(FIXTURES_DIR) up
+	@printf "$(COLOR_GREEN)✓ Banco de dados resetado com sucesso!$(COLOR_RESET)\n"
 
 db-shell: ## Abre shell no PostgreSQL
 	@docker compose exec postgres psql -U course -d course
